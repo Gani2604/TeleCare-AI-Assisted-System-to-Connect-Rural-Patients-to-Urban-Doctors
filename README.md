@@ -79,15 +79,6 @@ Example `.env` values (DO NOT commit real secrets):
 # Google Gemini API key used by the medical chatbot
 VITE_GEMINI_API_KEY=your_gemini_api_key_here
 
-# Supabase configuration
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-
-# Optional API and DB URIs
-VITE_API_URL=http://localhost:5000/api
-VITE_MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/dbname
-```
-
 Note: This repository already contains a `.env` file in the root with an example/key placeholder. Replace values with your own secrets and never commit them.
 
 4. Start the dev server
@@ -108,18 +99,5 @@ npm run dev
 ## Environment variables used in the project (quick map)
 
 - VITE_GEMINI_API_KEY — used by `src/components/chat/MedicalChatbot.tsx` for AI chat
-- VITE_SUPABASE_URL — used by `src/lib/api.ts` and `src/lib/config.ts`
-- VITE_SUPABASE_ANON_KEY — Supabase anon key
-- VITE_API_URL — optional backend API URL
-- VITE_MONGODB_URI — optional MongoDB connection string
 
-Search for `import.meta.env.VITE_` in the codebase to find all usages.
 
-## Build & Preview
-
-Build the production assets and preview locally:
-
-```powershell
-npm run build
-npm run preview
-```
