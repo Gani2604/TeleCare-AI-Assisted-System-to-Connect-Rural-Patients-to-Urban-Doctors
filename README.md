@@ -17,7 +17,7 @@ You can work on this project using your local IDE.
 
 ```sh
 # Step 1: Clone the repository
-git clone <YOUR_GIT_REPO_URL>
+git clone https://github.com/Gani2604/TeleCare-AI-Assisted-System-to-Connect-Rural-Patients-to-Urban-Doctors.git
 
 # Step 2: Navigate to the project directory
 cd telecare-connect-india
@@ -60,7 +60,7 @@ On Windows with PowerShell, ensure you have a recent Node.js installed. You can 
 1. Clone the repository and change into the directory
 
 ```powershell
-git clone <YOUR_GIT_REPO_URL>
+git clone https://github.com/Gani2604/TeleCare-AI-Assisted-System-to-Connect-Rural-Patients-to-Urban-Doctors.git
 cd telecare-connect-india-main
 ```
 
