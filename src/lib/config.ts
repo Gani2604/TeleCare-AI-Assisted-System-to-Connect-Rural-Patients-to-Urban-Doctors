@@ -23,7 +23,7 @@ const config: EnvironmentConfig = {
     url: import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
   },
   mongodb: {
-    uri: import.meta.env.VITE_MONGODB_URI || 'mongodb+srv://dganesh2604:Ganesh%40123@cluster0.3fnawcq.mongodb.net/telecare?retryWrites=true&w=majority&appName=Cluster0'
+    uri: import.meta.env.VITE_MONGODB_URI || 'mongodb+srv://user:password@cluster.mongodb.net/dbname'
   }
 };
 

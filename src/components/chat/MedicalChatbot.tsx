@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,12 +5,34 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Bot, Mic, MicOff, User } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
+import { GEMINI_API_KEY } from "@/config";
+
+// Initialize Gemini API with error handling
+let genAI: GoogleGenerativeAI | null = null;
+try {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    console.warn("Gemini API key not found. Chat will use fallback responses.");
+  } else {
+    // Log first few characters of API key for debugging (safely)
+    console.log("API Key starts with:", apiKey.substring(0, 4) + "...");
+    genAI = new GoogleGenerativeAI(apiKey);
+  }
+} catch (error) {
+  console.error("Failed to initialize Gemini API:", error);
+}
 
 interface Message {
   id: string;
   text: string;
   sender: "user" | "bot";
   timestamp: Date;
+}
+
+interface GeminiResponse {
+  text: string;
+  error?: string;
 }
 
 const MedicalChatbot = () => {
@@ -91,40 +112,40 @@ const MedicalChatbot = () => {
       possibleConditions: []
     },
     "back pain": {
-  response: "Back pain can result from poor posture, muscle strain, or underlying medical conditions. Rest, stretching, and over-the-counter pain relief may help. Seek medical attention if pain persists or worsens.",
-  suggestedDoctors: ["Dr. Vikram Singh (Orthopedics)", "Dr. Kavita Desai (Physiotherapy)"],
-  possibleConditions: ["Muscle strain", "Herniated disc", "Sciatica"]
-},
-"allergies": {
-  response: "Allergies can cause sneezing, itching, rashes, or breathing issues. Avoid known allergens and consider antihistamines. Severe cases require medical consultation.",
-  suggestedDoctors: ["Dr. Kavita Desai (Allergy Specialist)", "Dr. Rajesh Patel (Dermatology)"],
-  possibleConditions: ["Seasonal allergies", "Food allergy", "Allergic rhinitis"]
-},
-"anxiety": {
-  response: "Anxiety may involve excessive worry, restlessness, or physical symptoms like a rapid heartbeat. Techniques like mindfulness, therapy, or medication may help.",
-  suggestedDoctors: ["Dr. Meena Iyer (Psychiatry)", "Dr. Rajeev Khanna (Psychology)"],
-  possibleConditions: ["Generalized Anxiety Disorder", "Panic disorder", "Social anxiety"]
-},
-"menstrual cramps": {
-  response: "Menstrual cramps are common and often manageable with rest, hydration, and pain relievers. If severe or irregular, consult a gynecologist.",
-  suggestedDoctors: ["Dr. Shalini Rao (Gynecology)", "Dr. Priya Sharma (General Medicine)"],
-  possibleConditions: ["Dysmenorrhea", "Endometriosis", "Hormonal imbalance"]
-},
-"acne": {
-  response: "Acne is often caused by clogged pores, bacteria, or hormonal changes. Treatment includes good hygiene, topical creams, and in some cases, antibiotics.",
-  suggestedDoctors: ["Dr. Rajesh Patel (Dermatology)", "Dr. Kavita Desai (Skin Specialist)"],
-  possibleConditions: ["Hormonal acne", "Cystic acne", "Blackheads/whiteheads"]
-},
-"constipation": {
-  response: "Constipation can result from diet, dehydration, or inactivity. High-fiber foods, fluids, and exercise may help. Chronic constipation may need medical attention.",
-  suggestedDoctors: ["Dr. Rohan Mehta (Gastroenterology)", "Dr. Sanjay Kumar (Internal Medicine)"],
-  possibleConditions: ["IBS", "Dehydration", "Low fiber intake"]
-},
-"toothache": {
-  response: "Toothaches can be caused by cavities, infection, or gum disease. Rinsing with salt water and painkillers may help short-term. See a dentist for lasting relief.",
-  suggestedDoctors: ["Dr. Anil Mehra (Dentistry)", "Dr. Neha Reddy (Oral Surgery)"],
-  possibleConditions: ["Tooth decay", "Gum infection", "Dental abscess"]
-},
+      response: "Back pain can result from poor posture, muscle strain, or underlying medical conditions. Rest, stretching, and over-the-counter pain relief may help. Seek medical attention if pain persists or worsens.",
+      suggestedDoctors: ["Dr. Vikram Singh (Orthopedics)", "Dr. Kavita Desai (Physiotherapy)"],
+      possibleConditions: ["Muscle strain", "Herniated disc", "Sciatica"]
+    },
+    "allergies": {
+      response: "Allergies can cause sneezing, itching, rashes, or breathing issues. Avoid known allergens and consider antihistamines. Severe cases require medical consultation.",
+      suggestedDoctors: ["Dr. Kavita Desai (Allergy Specialist)", "Dr. Rajesh Patel (Dermatology)"],
+      possibleConditions: ["Seasonal allergies", "Food allergy", "Allergic rhinitis"]
+    },
+    "anxiety": {
+      response: "Anxiety may involve excessive worry, restlessness, or physical symptoms like a rapid heartbeat. Techniques like mindfulness, therapy, or medication may help.",
+      suggestedDoctors: ["Dr. Meena Iyer (Psychiatry)", "Dr. Rajeev Khanna (Psychology)"],
+      possibleConditions: ["Generalized Anxiety Disorder", "Panic disorder", "Social anxiety"]
+    },
+    "menstrual cramps": {
+      response: "Menstrual cramps are common and often manageable with rest, hydration, and pain relievers. If severe or irregular, consult a gynecologist.",
+      suggestedDoctors: ["Dr. Shalini Rao (Gynecology)", "Dr. Priya Sharma (General Medicine)"],
+      possibleConditions: ["Dysmenorrhea", "Endometriosis", "Hormonal imbalance"]
+    },
+    "acne": {
+      response: "Acne is often caused by clogged pores, bacteria, or hormonal changes. Treatment includes good hygiene, topical creams, and in some cases, antibiotics.",
+      suggestedDoctors: ["Dr. Rajesh Patel (Dermatology)", "Dr. Kavita Desai (Skin Specialist)"],
+      possibleConditions: ["Hormonal acne", "Cystic acne", "Blackheads/whiteheads"]
+    },
+    "constipation": {
+      response: "Constipation can result from diet, dehydration, or inactivity. High-fiber foods, fluids, and exercise may help. Chronic constipation may need medical attention.",
+      suggestedDoctors: ["Dr. Rohan Mehta (Gastroenterology)", "Dr. Sanjay Kumar (Internal Medicine)"],
+      possibleConditions: ["IBS", "Dehydration", "Low fiber intake"]
+    },
+    "toothache": {
+      response: "Toothaches can be caused by cavities, infection, or gum disease. Rinsing with salt water and painkillers may help short-term. See a dentist for lasting relief.",
+      suggestedDoctors: ["Dr. Anil Mehra (Dentistry)", "Dr. Neha Reddy (Oral Surgery)"],
+      possibleConditions: ["Tooth decay", "Gum infection", "Dental abscess"]
+    },
     "joint pain": {
       response: "Joint pain can be caused by inflammation, injury, or disease. It's common in conditions like arthritis. Treatment may include medication, physical therapy, or lifestyle modifications.",
       suggestedDoctors: ["Dr. Vikram Singh (Orthopedics)", "Dr. Kavita Desai (Rheumatology)"],
@@ -139,6 +160,74 @@ const MedicalChatbot = () => {
       response: "Skin rashes can be caused by allergies, infections, or underlying health conditions. Symptoms may include redness, itching, or bumps on the skin.",
       suggestedDoctors: ["Dr. Rajesh Patel (Dermatology)", "Dr. Kavita Desai (Allergy Specialist)"],
       possibleConditions: ["Eczema", "Contact dermatitis", "Fungal infection"]
+    }
+  };
+  
+  // Function to get response from Gemini
+  const getGeminiResponse = async (query: string): Promise<GeminiResponse> => {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      console.warn("Gemini API key not found. Chat will use fallback responses.");
+      return { text: processQuery(query) };
+    }
+
+    try {
+      console.log("API Key starts with:", apiKey.substring(0, 4) + "...");
+      
+      // Use the recommended model directly
+      const modelName = "models/gemini-1.5-flash";
+      console.log("Using model:", modelName);
+      
+      const endpoint = `https://generativelanguage.googleapis.com/v1/${modelName}:generateContent?key=${apiKey}`;
+      console.log("Using endpoint:", endpoint);
+
+      const requestBody = {
+        contents: [
+          {
+            parts: [{ text: query }],
+          },
+        ],
+      };
+      console.log("Request body:", JSON.stringify(requestBody, null, 2));
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log("Response status:", response.status);
+      console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response body:", errorText);
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log("Response data:", result);
+
+      const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!generatedText) {
+        console.error("Invalid response format:", result);
+        throw new Error("Invalid response format from Gemini API");
+      }
+
+      return { text: generatedText };
+    } catch (error) {
+      console.error("Gemini API Error:", error);
+      if (error instanceof Error) {
+        console.error("Error name:", error.name);
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
+      return { 
+        text: processQuery(query),
+        error: error instanceof Error ? error.message : "Unknown error occurred"
+      };
     }
   };
   
@@ -185,7 +274,7 @@ const MedicalChatbot = () => {
     return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
   };
   
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!input.trim()) return;
     
     // Add user message
@@ -200,20 +289,28 @@ const MedicalChatbot = () => {
     setInput("");
     setIsLoading(true);
     
-    // Process the message and generate response
-    setTimeout(() => {
-      const botResponse = processQuery(userMessage.text);
-      
+    try {
+      // Get response from Gemini
+      const geminiResponse = await getGeminiResponse(userMessage.text);
+
       const botMessage: Message = {
         id: Date.now().toString(),
-        text: botResponse,
+        text: geminiResponse.text,
         sender: "bot",
         timestamp: new Date(),
       };
       
       setMessages((prev) => [...prev, botMessage]);
+
+      if (geminiResponse.error) {
+        toast.error("Failed to get response from AI");
+      }
+    } catch (error) {
+      console.error("Error processing message:", error);
+      toast.error("Failed to process your message");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
   
   const handleKeyPress = (e: React.KeyboardEvent) => {

@@ -1,8 +1,8 @@
-
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Calendar, Video, FileText, Search, Clock, Shield } from "lucide-react";
+import FloatingChatButton from "@/components/chat/FloatingChatButton";
 
 const Index = () => {
   const { t } = useTranslation();
@@ -133,6 +133,9 @@ const Index = () => {
           </Button>
         </div>
       </section>
+
+      {/* Floating Chat Button */}
+      <FloatingChatButton />
     </div>
   );
 };
